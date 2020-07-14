@@ -150,18 +150,14 @@ pub use error::{
 };
 pub use look_ahead::Lookahead;
 pub use parser::{Pos, Positioned, Value};
-pub use query::{
-    IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse, StreamResponse,
-};
+pub use query::{IntoQueryBuilder, IntoQueryBuilderOpts, QueryBuilder, QueryResponse};
 pub use registry::CacheControl;
 pub use scalars::{Any, Json, OutputJson, ID};
 pub use schema::{Schema, SchemaBuilder, SchemaEnv};
 pub use subscription::{
     SimpleBroker, SubscriptionStreams, SubscriptionTransport, WebSocketTransport,
 };
-pub use types::{
-    connection, Deferred, EmptyMutation, EmptySubscription, MaybeUndefined, Streamed, Upload,
-};
+pub use types::{connection, EmptyMutation, EmptySubscription, MaybeUndefined, Upload};
 pub use validation::ValidationMode;
 
 /// Result type
