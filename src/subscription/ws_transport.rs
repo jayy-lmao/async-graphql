@@ -167,4 +167,11 @@ impl SubscriptionTransport for WebSocketTransport {
             None
         }
     }
+
+    fn remove_stream(&mut self, sid: usize) {
+        if let Some(id) = self.sid_to_id.get(&sid).cloned() {
+            self.sid_to_id.remove(&sid);
+            self.id_to_sid.remove(&id);
+        }
+    }
 }

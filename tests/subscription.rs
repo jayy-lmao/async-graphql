@@ -542,3 +542,26 @@ pub async fn test_subscription_fieldresult() {
 
     assert!(stream.next().await.is_none());
 }
+
+#[async_std::test]
+pub async fn test_query_over_subscription() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            100
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let mut stream = schema
+        .create_subscription_stream("query { value }", None, Default::default(), None)
+        .await
+        .unwrap();
+    assert_eq!(
+        Some(Ok(serde_json::json!({ "data": { "value": 100 } }))),
+        stream.next().await
+    );
+    assert!(stream.next().await.is_none());
+}

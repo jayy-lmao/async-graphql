@@ -52,6 +52,9 @@ pub trait SubscriptionTransport: Send + Sync + Unpin + 'static {
 
     /// When a response message is generated, you can convert the message to the format you want here.
     fn handle_response(&mut self, id: usize, res: Result<serde_json::Value>) -> Option<Bytes>;
+
+    /// Notification when a stream ends.
+    fn remove_stream(&mut self, _id: usize) {}
 }
 
 pub fn create_connection<Query, Mutation, Subscription, T: SubscriptionTransport>(
@@ -179,7 +182,10 @@ where
                         }
                     }
 
-                    closed.iter().for_each(|id| streams.remove(*id));
+                    for id in closed {
+                        streams.remove(id);
+                        transport.remove_stream(id);
+                    }
                     this.waker.register(cx.waker());
                     return Poll::Pending;
                 } else {

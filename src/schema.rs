@@ -1,5 +1,6 @@
 use crate::context::Data;
 use crate::extensions::{BoxExtension, ErrorLogger, Extension, Extensions};
+use crate::http::GQLResponse;
 use crate::model::__DirectiveLocation;
 use crate::parser::parse_query;
 use crate::query::{QueryBuilder, StreamResponse};
@@ -384,28 +385,42 @@ where
             .log_error(&extensions);
         }
 
-        if document.current_operation().ty != OperationType::Subscription {
-            return Err(QueryError::NotSupported.into_error(Pos::default())).log_error(&extensions);
+        let mut streams = Vec::new();
+        if document.current_operation().ty == OperationType::Subscription {
+            let resolve_id = AtomicUsize::default();
+            let env = QueryEnv::new(
+                extensions,
+                variables,
+                document,
+                ctx_data.unwrap_or_default(),
+            );
+            let ctx = env.create_context(
+                &self.env,
+                None,
+                &env.document.current_operation().selection_set,
+                &resolve_id,
+                None,
+            );
+
+            create_subscription_stream(self, env.clone(), &ctx, &mut streams)
+                .await
+                .log_error(&ctx.query_env.extensions)?;
+        } else {
+            let mut builder = QueryBuilder::new(source).variables(variables);
+            if let Some(operation_name) = operation_name {
+                builder = builder.operation_name(operation_name);
+            }
+            if let Some(data) = ctx_data {
+                builder = builder.data(data);
+            }
+            let schema = self.clone();
+            let stream = Box::pin(futures::stream::once(async move {
+                let res = GQLResponse(builder.execute(&schema).await);
+                Ok(serde_json::to_value(res).unwrap())
+            }));
+            streams.push(stream);
         }
 
-        let resolve_id = AtomicUsize::default();
-        let env = QueryEnv::new(
-            extensions,
-            variables,
-            document,
-            ctx_data.unwrap_or_default(),
-        );
-        let ctx = env.create_context(
-            &self.env,
-            None,
-            &env.document.current_operation().selection_set,
-            &resolve_id,
-            None,
-        );
-        let mut streams = Vec::new();
-        create_subscription_stream(self, env.clone(), &ctx, &mut streams)
-            .await
-            .log_error(&ctx.query_env.extensions)?;
         Ok(futures::stream::select_all(streams))
     }
 
