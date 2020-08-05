@@ -106,6 +106,7 @@ impl Extension for ApolloTracing {
     }
 
     fn result(&mut self) -> Option<serde_json::Value> {
+        println!("{:?}", self.resolves)
         self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
         Some(serde_json::json!({
