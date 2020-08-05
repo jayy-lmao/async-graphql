@@ -6,6 +6,7 @@ use serde::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::ops::Deref;
 
+#[derive(Debug)]
 struct PendingResolve {
     path: serde_json::Value,
     field_name: String,
@@ -14,6 +15,7 @@ struct PendingResolve {
     start_time: DateTime<Utc>,
 }
 
+#[derive(Debug)]
 struct ResolveStat {
     pending_resolve: PendingResolve,
     end_time: DateTime<Utc>,
@@ -106,7 +108,7 @@ impl Extension for ApolloTracing {
     }
 
     fn result(&mut self) -> Option<serde_json::Value> {
-        println!("{:?}", self.resolves)
+        println!("{:?}", self.resolves);
         self.resolves
             .sort_by(|a, b| a.start_offset.cmp(&b.start_offset));
         Some(serde_json::json!({
